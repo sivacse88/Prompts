@@ -1,17 +1,22 @@
 codeql warning 
 =COUNTIFS(Code_Scanning!$A:$A,$B2,Code_Scanning!$F:$F,"warning",Code_Scanning!$G:$G,"open")
+=SUMPRODUCT((TRIM(UPPER(Code_Scanning!$A$2:$A$5000))=TRIM(UPPER($B2)))*(TRIM(UPPER(Code_Scanning!$F$2:$F$5000))="WARNING")*(TRIM(UPPER(Code_Scanning!$G$2:$G$5000))="OPEN"))
 
 codeql error
 =COUNTIFS(Code_Scanning!$A:$A,$B2,Code_Scanning!$F:$F,"error",Code_Scanning!$G:$G,"open")
+=SUMPRODUCT((TRIM(UPPER(Code_Scanning!$A$2:$A$5000))=TRIM(UPPER($B2)))*(TRIM(UPPER(Code_Scanning!$F$2:$F$5000))="ERROR")*(TRIM(UPPER(Code_Scanning!$G$2:$G$5000))="OPEN"))
 
 MEND Critical
 =COUNTIFS(MEND!$A:$A,$B2,MEND!$E:$E,">=8.1",MEND!$F:$F,"open")
+=SUMPRODUCT((TRIM(UPPER(MEND!$A$2:$A$5000))=TRIM(UPPER($B2)))*(MEND!$E$2:$E$5000>=8.1)*(TRIM(UPPER(MEND!$F$2:$F$5000))="OPEN"))
 
 MEND Medium
 =COUNTIFS(MEND!$A:$A,$B2,MEND!$E:$E,"<8.1",MEND!$F:$F,"open")
+=SUMPRODUCT((TRIM(UPPER(MEND!$A$2:$A$5000))=TRIM(UPPER($B2)))*(MEND!$E$2:$E$5000<8.1)*(TRIM(UPPER(MEND!$F$2:$F$5000))="OPEN"))
 
 Secret scanning
 =COUNTIFS(Secret_Scanning!$A:$A,$B2,Secret_Scanning!$E:$E,"open")
+=SUMPRODUCT((TRIM(UPPER(Secret_Scanning!$A$2:$A$5000))=TRIM(UPPER($B2)))*(TRIM(UPPER(Secret_Scanning!$E$2:$E$5000))="OPEN"))
 
 
 
