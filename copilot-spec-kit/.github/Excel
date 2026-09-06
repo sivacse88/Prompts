@@ -1,0 +1,3 @@
+=MID(FORMULATEXT(F2), FIND("""",FORMULATEXT(F2))+1, FIND("""",FORMULATEXT(F2),FIND("""",FORMULATEXT(F2))+1)-FIND("""",FORMULATEXT(F2))-1)
+=HYPERLINK(XLOOKUP(B2, Confluence!B:B, Confluence!G:G, "Not Found"), XLOOKUP(B2, Confluence!B:B, Confluence!C:C, "Not Found"))
+
