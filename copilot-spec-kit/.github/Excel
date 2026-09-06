@@ -1,15 +1,20 @@
-=IF(D2="Past Due","Past Due",IF(ISNUMBER(D2),D2,IFERROR(DATEVALUE(D2),"")))
-=IF(COUNTIF(TLM!$A:$A,B2)=0,"N/A",
- IF(COUNTIFS(TLM!$A:$A,B2,TLM!$E:$E,"Past Due")>0,"Past Due",
- MINIFS(TLM!$E:$E,TLM!$A:$A,B2)))
+codeql warning 
+=COUNTIFS(Code_Scanning!$A:$A,$B2,Code_Scanning!$F:$F,"warning",Code_Scanning!$G:$G,"open")
 
-=IF(COUNTIF(TLM!$A:$A,B2)=0,"Current",
- IF(COUNTIFS(TLM!$A:$A,B2,TLM!$E:$E,"Past Due")>0,"End of Life",
- IF(MINIFS(TLM!$E:$E,TLM!$A:$A,B2)<TODAY(),"End of Life",
- IF(MINIFS(TLM!$E:$E,TLM!$A:$A,B2)<=TODAY()+90,"Approaching EOL","Current"))))
+codeql error
+=COUNTIFS(Code_Scanning!$A:$A,$B2,Code_Scanning!$F:$F,"error",Code_Scanning!$G:$G,"open")
+
+MEND Critical
+=COUNTIFS(MEND!$A:$A,$B2,MEND!$E:$E,">=8.1",MEND!$F:$F,"open")
+
+MEND Medium
+=COUNTIFS(MEND!$A:$A,$B2,MEND!$E:$E,"<8.1",MEND!$F:$F,"open")
+
+Secret scanning
+=COUNTIFS(Secret_Scanning!$A:$A,$B2,Secret_Scanning!$E:$E,"open")
 
 
-=IF(OR(M2="N/A",M2="Past Due"),"",M2-TODAY())
+
 
 
 
