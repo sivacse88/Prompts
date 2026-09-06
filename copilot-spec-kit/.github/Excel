@@ -1,12 +1,15 @@
-=MID(FORMULATEXT(F2), FIND("""",FORMULATEXT(F2))+1, FIND("""",FORMULATEXT(F2),FIND("""",FORMULATEXT(F2))+1)-FIND("""",FORMULATEXT(F2))-1)
-=HYPERLINK(XLOOKUP(B2, Confluence!B:B, Confluence!G:G, "Not Found"), XLOOKUP(B2, Confluence!B:B, Confluence!C:C, "Not Found"))
-=IF(COUNTIF(TLM!$A:$A,B2)=0,"Current",
- IF(COUNTIFS(TLM!$A:$A,B2,TLM!$D:$D,"Past Due")>0,"End of Life",
- IF(MINIFS(TLM!$D:$D,TLM!$A:$A,B2)<TODAY(),"End of Life",
- IF(MINIFS(TLM!$D:$D,TLM!$A:$A,B2)<=TODAY()+90,"Approaching EOL","Current"))))
+=IF(D2="Past Due","Past Due",IF(ISNUMBER(D2),D2,IFERROR(DATEVALUE(D2),"")))
 =IF(COUNTIF(TLM!$A:$A,B2)=0,"N/A",
- IF(COUNTIFS(TLM!$A:$A,B2,TLM!$D:$D,"Past Due")>0,"Past Due",
- MINIFS(TLM!$D:$D,TLM!$A:$A,B2)))
+ IF(COUNTIFS(TLM!$A:$A,B2,TLM!$E:$E,"Past Due")>0,"Past Due",
+ MINIFS(TLM!$E:$E,TLM!$A:$A,B2)))
+
+=IF(COUNTIF(TLM!$A:$A,B2)=0,"Current",
+ IF(COUNTIFS(TLM!$A:$A,B2,TLM!$E:$E,"Past Due")>0,"End of Life",
+ IF(MINIFS(TLM!$E:$E,TLM!$A:$A,B2)<TODAY(),"End of Life",
+ IF(MINIFS(TLM!$E:$E,TLM!$A:$A,B2)<=TODAY()+90,"Approaching EOL","Current"))))
+
 
 =IF(OR(M2="N/A",M2="Past Due"),"",M2-TODAY())
+
+
 
