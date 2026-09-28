@@ -1,0 +1,156 @@
+// =====================================================================
+// Application Portfolio Health - DAX starter
+// Table name assumed: tbl_AppInventory  (as it appears in Power BI)
+// Paste ONE block at a time: Modeling > New measure (or New column)
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// PART A - CALCULATED COLUMNS   (Modeling > New column)
+// ---------------------------------------------------------------------
+
+Findings Total =
+    COALESCE ( 'tbl_AppInventory'[MEND Critical], 0 )
+  + COALESCE ( 'tbl_AppInventory'[MEND Medium], 0 )
+  + COALESCE ( 'tbl_AppInventory'[Codeql Error], 0 )
+  + COALESCE ( 'tbl_AppInventory'[Codeql Warning], 0 )
+  + COALESCE ( 'tbl_AppInventory'[Secret Scanning], 0 )
+
+EOL Bucket =
+VAR d = 'tbl_AppInventory'[Days to TLM Target]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( d ), "No EOL date",
+        d < 0,         "Past EOL",
+        d <= 90,       "0-90 days",
+        d <= 180,      "91-180 days",
+        d <= 365,      "181-365 days",
+                       "1 year +"
+    )
+
+// Use this to sort EOL Bucket: select EOL Bucket > Column tools > Sort by column > EOL Bucket Sort
+EOL Bucket Sort =
+VAR d = 'tbl_AppInventory'[Days to TLM Target]
+RETURN
+    SWITCH ( TRUE (), ISBLANK ( d ), 6, d < 0, 0, d <= 90, 1, d <= 180, 2, d <= 365, 3, 4 )
+
+// Use this to sort App Stage: select App Stage > Sort by column > Stage Sort
+Stage Sort =
+    SWITCH (
+        'tbl_AppInventory'[App Stage],
+        "Production", 1,
+        "Acquisition/Development", 2,
+        "Concept", 3,
+        9
+    )
+
+Has Sonar =
+    IF (
+        ISBLANK ( 'tbl_AppInventory'[Sonar Key] )
+            || 'tbl_AppInventory'[Sonar Key] = "Not found",
+        "Not onboarded",
+        "Onboarded"
+    )
+
+// Weights are a starting point - agree them with leadership and adjust
+Risk Score =
+VAR d = 'tbl_AppInventory'[Days to TLM Target]
+RETURN
+      COALESCE ( 'tbl_AppInventory'[MEND Critical], 0 ) * 10
+    + COALESCE ( 'tbl_AppInventory'[Secret Scanning], 0 ) * 10
+    + COALESCE ( 'tbl_AppInventory'[Codeql Error], 0 ) * 3
+    + COALESCE ( 'tbl_AppInventory'[MEND Medium], 0 ) * 1
+    + COALESCE ( 'tbl_AppInventory'[Codeql Warning], 0 ) * 0.5
+    + IF ( NOT ISBLANK ( d ) && d <= 90, 15, 0 )
+
+Risk Tier =
+VAR s = 'tbl_AppInventory'[Risk Score]
+RETURN
+    SWITCH ( TRUE (), s >= 25, "High", s >= 8, "Medium", s > 0, "Low", "None" )
+
+
+// ---------------------------------------------------------------------
+// PART B - MEASURES   (Modeling > New measure)
+// ---------------------------------------------------------------------
+
+Total Apps = COUNTROWS ( 'tbl_AppInventory' )
+
+Production Apps =
+    CALCULATE ( [Total Apps], 'tbl_AppInventory'[App Stage] = "Production" )
+
+Total MEND Critical = SUM ( 'tbl_AppInventory'[MEND Critical] ) + 0
+
+Total MEND Medium = SUM ( 'tbl_AppInventory'[MEND Medium] ) + 0
+
+CodeQL Errors = SUM ( 'tbl_AppInventory'[Codeql Error] ) + 0
+
+CodeQL Warnings = SUM ( 'tbl_AppInventory'[Codeql Warning] ) + 0
+
+Secrets Exposed = SUM ( 'tbl_AppInventory'[Secret Scanning] ) + 0
+
+Total Findings = SUM ( 'tbl_AppInventory'[Findings Total] ) + 0
+
+Apps with Findings =
+    CALCULATE ( [Total Apps], 'tbl_AppInventory'[Findings Total] > 0 ) + 0
+
+Findings per App = DIVIDE ( [Total Findings], [Total Apps], 0 )
+
+Approaching EOL =
+    CALCULATE ( [Total Apps], 'tbl_AppInventory'[TLM Status] = "Approaching EOL" ) + 0
+
+EOL within 90 Days =
+    CALCULATE (
+        [Total Apps],
+        FILTER (
+            'tbl_AppInventory',
+            NOT ISBLANK ( 'tbl_AppInventory'[Days to TLM Target] )
+                && 'tbl_AppInventory'[Days to TLM Target] <= 90
+        )
+    ) + 0
+
+// An app is "at risk" if it has a critical vuln, an exposed secret, or EOL within 90 days
+Apps at Risk =
+    CALCULATE (
+        [Total Apps],
+        FILTER (
+            'tbl_AppInventory',
+            COALESCE ( 'tbl_AppInventory'[MEND Critical], 0 ) > 0
+                || COALESCE ( 'tbl_AppInventory'[Secret Scanning], 0 ) > 0
+                || (
+                    NOT ISBLANK ( 'tbl_AppInventory'[Days to TLM Target] )
+                        && 'tbl_AppInventory'[Days to TLM Target] <= 90
+                )
+        )
+    ) + 0
+
+Apps at Risk % = DIVIDE ( [Apps at Risk], [Total Apps], 0 )
+
+Sonar Coverage % =
+    DIVIDE (
+        CALCULATE ( [Total Apps], 'tbl_AppInventory'[Has Sonar] = "Onboarded" ),
+        [Total Apps],
+        0
+    )
+
+// Average test coverage only across apps that actually report coverage
+Avg Test Coverage =
+    AVERAGEX (
+        FILTER ( 'tbl_AppInventory', 'tbl_AppInventory'[Coverage] > 0 ),
+        'tbl_AppInventory'[Coverage]
+    )
+
+Sonar Blocker + Critical =
+    SUM ( 'tbl_AppInventory'[blocker_violations] )
+        + SUM ( 'tbl_AppInventory'[critical_violations] ) + 0
+
+// Needs the "Refreshed On" column added in Power Query (see guide, step 3)
+Last Refreshed =
+    "Data as of " & FORMAT ( MAX ( 'tbl_AppInventory'[Refreshed On] ), "mmm d, yyyy h:mm AM/PM" )
+
+// Dynamic headline for page titles
+Headline EOL =
+    [EOL within 90 Days] & " apps reach end of life in the next 90 days"
+
+Headline Risk =
+    [Apps at Risk] & " of " & [Total Apps] & " apps (" & FORMAT ( [Apps at Risk %], "0%" ) & ") need attention"
