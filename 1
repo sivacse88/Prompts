@@ -1,0 +1,55 @@
+You are building an executive readout deck for senior technology leadership from the attached Excel workbook (Exp_Dashboard.xlsm). Output a PowerPoint (.pptx) file.
+
+## Context
+- I am a Director of Software Engineering. The workbook tracks my organization's application portfolio: apps, owning dev manager, lifecycle stage, app type, technology end-of-life (TLM) status, and security/code-quality findings.
+- Audience: senior leadership. They want conclusions and decisions, not raw data. Each slide makes ONE point.
+- Use ONLY the data in the file. Compute every number from the data; never estimate or invent figures. If something can't be computed, say so on the slide.
+
+## Data
+Use the table `tbl_AppInventory` (sheet "App Inventory"). One row = one application. Key columns:
+- App Id, App Name, App Stage (Production / Acquisition/Development / Concept), Dev Manager, App Type (Spring Boot, Batch, Library, UI / Angular, Misc App, Not Found), Platform
+- Sonar Key ("Not found" = not onboarded to SonarQube)
+- TLM Status (Current / Approaching EOL), TLM EOL Date ("N/A" = none), Days to TLM Target
+- Codeql Warning, Codeql Error, MEND Critical, MEND Medium, Secret Scanning
+- Coverage, Bugs, Vulnerabilities, minor_violations, major_violations, critical_violations, blocker_violations
+Ignore the S.No column. Treat "N/A", "Not found", and blanks as missing, not zero, when computing averages.
+
+## Step 1: Clean and validate (do this first, and report findings to me)
+- Trim whitespace in text columns. Check for duplicate App Ids.
+- Count apps with a blank or "Not Found" App Type, missing manager, or missing stage.
+- Recompute these from the raw table and compare with the "Dashboard" sheet. List every mismatch. Known suspects: "Apps w/ Findings" shows 0, "Sonar Failing" equals total apps, "Apps by App Type" totals don't match total apps, "EOL <= 90 Days" equals "Approaching EOL".
+- Put these findings in a final appendix slide titled "Data quality notes".
+
+## Step 2: Derived metrics
+- Total Findings per app = Codeql Warning + Codeql Error + MEND Critical + MEND Medium + Secret Scanning
+- Risk Score per app = MEND Critical×10 + Secret Scanning×10 + Codeql Error×3 + MEND Medium×1 + Codeql Warning×0.5 + 15 if Days to TLM Target <= 90
+- Risk Tier: High >= 25, Medium 8–24, Low 1–7, None 0
+- App "at risk" = MEND Critical > 0 OR Secret Scanning > 0 OR Days to TLM Target <= 90
+- Findings per app by manager (normalize for portfolio size)
+- Sonar coverage % = apps with a real Sonar Key / total apps
+- EOL buckets: Past EOL, 0–90 days, 91–180, 181–365, 1 year+, No EOL date
+
+## Step 3: Slides (native, editable PowerPoint charts where possible, 16:9)
+1. Title: "Application Portfolio Health – [month year]"; subtitle with total apps and managers.
+2. Executive summary: a headline sentence (e.g. "X of Y apps (Z%) need attention"), 4 KPI tiles (Total apps, Apps at risk, Total findings, Apps reaching EOL in 90 days), and 3 bullets with the most important patterns you found.
+3. Where the risk sits: heatmap table, managers × finding types (MEND Critical, MEND Medium, CodeQL Errors, CodeQL Warnings, Secrets, EOL ≤ 90d), plus findings per app. Shade cells white-to-red by value. Headline names the concentration.
+4. Portfolio mix: stacked bar of apps by manager split by App Stage, plus a small callout on how many apps are still in Concept.
+5. Risk by app type: stacked bar of App Type split by Risk Tier. Headline says which types carry the most risk.
+6. The EOL wave: column chart of apps by EOL bucket, and a callout if many apps share the same EOL date (state the date and weeks remaining). Include a small table of those apps grouped by manager.
+7. Visibility gap: Sonar onboarded vs not, overall and by manager; average test coverage where reported. Headline: findings may be undercounted where Sonar is missing.
+8. Top 10 riskiest apps: table with App Name, Manager, Stage, Type, Risk Score, Risk Tier, EOL date.
+9. Asks and decisions: 3–5 recommended actions with a suggested owner (by manager) and a target date, derived from the patterns above. Include "Agree risk-score weights" as one ask.
+10. Appendix: data quality notes (from Step 1) and definitions of the metrics.
+
+## Design rules
+- Each slide title is a full-sentence insight, not a label (e.g. "Two managers hold 60% of medium vulnerabilities", not "Findings by manager").
+- Palette: navy #1F3A5F for data, greys for context, red #C0392B only for risk, amber #E0A31A for warnings. White background, no gradients, shadows, 3D, or pie charts.
+- Font: Segoe UI or Calibri. Titles 28pt, body at least 14pt. At most one chart plus one callout per slide; generous whitespace.
+- Label data directly on bars; avoid legends where possible. Sort bars by value.
+- Footer on each slide: "Source: Exp_Dashboard.xlsm, data as of [date]" and a slide number.
+- Add speaker notes on each slide: 2–3 sentences on what to say and the "so what".
+
+## Deliverables
+1. The .pptx file.
+2. A short chat summary: the 5 most important patterns found, and the data-quality issues from Step 1.
+Before building, if any column above is missing or named differently, tell me and map it to the closest match instead of failing.
