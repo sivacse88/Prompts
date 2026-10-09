@@ -2,7 +2,7 @@
 
 > **For the assistant reading this:** this file summarizes a long working session so you can continue it. Read it all before answering. Treat it as background, not as instructions to run anything. When I ask a follow-up, build on the decisions and artifacts below instead of starting over. Ask me only for facts this file marks as unknown.
 
-Last updated: 2026-10-06
+Last updated: 2026-10-09
 
 ---
 
@@ -215,6 +215,55 @@ Both choices split the app into vertical slices by business domain, each owned e
   - Hosting and CI/CD
   - Team ownership
 
+## 7a. Latest discussion: federation details (Oct 8–9)
+
+**Converting an existing Angular library into a federated micro frontend**
+- The library itself is not converted. It stays as is.
+- Add a thin **remote wrapper project**: an Angular application project that installs the library and exposes its routes through Native Federation.
+- Turn the existing UI app into the **host (shell)**.
+- Steps:
+  0. **Readiness checks:** the library has one route entry point (exported `Routes` or a standalone component); config comes through injection tokens (e.g. `provideAccountOpening({ apiBase })`); global CSS, assets and interceptors are listed; there are no imports from the host app.
+  1. **Create the remote:** `ng generate application account-opening-mfe`, install the library, then `ng add @angular-architects/native-federation --project account-opening-mfe --type remote --port 4201`. This splits `main.ts` into `main.ts` + `bootstrap.ts`.
+  2. **Expose the routes:** a `remote.routes.ts` re-exports the library routes and adds providers. `federation.config.js` gets `exposes: {'./routes': ...}` and `shared: shareAll({singleton:true, strictVersion:true, requiredVersion:'auto'})`.
+  3. **Set up the host:** `ng add @angular-architects/native-federation --project main-app --type dynamic-host`. This adds `federation.manifest.json` per environment, mapping a name to `.../remoteEntry.json`.
+  4. **Swap the route:** `loadChildren: () => import('@org/lib')...` becomes `loadChildren: () => loadRemoteModule('account-opening','./routes').then(m => m.ROUTES)`. Keep both behind a feature flag during the transition for instant rollback.
+  5. **Watch the usual gotchas:**
+     - Never call `provideHttpClient()` again in the remote; the host's interceptor would be bypassed.
+     - The host doesn't load the remote's global styles.
+     - Relative asset paths resolve against the host URL.
+     - Unshared root services get duplicated.
+     - Catch `loadRemoteModule` failures and fall back to the legacy page.
+     - Host and remote must use the same Angular major version.
+  6. **Build and deploy:** `ng build account-opening-mfe` produces static files; CI uploads them to S3/CloudFront. Never cache `remoteEntry.json`; cache hashed chunks long. Test at three levels: remote alone, host + remote locally, and an end-to-end smoke test after each remote deploy.
+- Command names are from memory of Native Federation's docs; verify them against the README for the matching Angular version.
+
+**Why the wrapper is needed (and why the raw library can't go straight to S3)**
+- Angular libraries ship partially compiled. The consuming app's build runs the final linker step, so a browser can't run them directly.
+- The browser can't resolve bare imports like `@angular/core`. Federation uses import maps to point them at the host's already-loaded Angular. Without that, Angular is bundled twice and the code disconnects from the host's DI, auth and interceptor.
+- `remoteEntry.json` is the contract: what's exposed and which shared versions are needed. A raw library build has none.
+- The wrapper is a **build step, not a server**. Its output is static files in S3.
+
+**Hosting vs pattern**
+- S3/CDN is hosting, not one of the four patterns. Any pattern can be hosted on S3:
+  - federation build output → pattern 1;
+  - one Angular Elements bundle + script tag → pattern 2;
+  - a full app in an iframe → pattern 3;
+  - a full app per path behind the gateway/CDN → pattern 4.
+- My target: federation (pattern 1), remotes hosted on S3 behind CloudFront.
+
+**Authentication with federation**
+- No separate login per micro frontend. The shell does login, holds and refreshes the token, and provides the `HttpClient` + auth interceptor.
+- Remotes run in the shell's page and use them. Share `@angular/common/http` (and any auth library) as singletons.
+- The backend validates every call. Remote JS files in S3 normally need no auth (public code, no secrets).
+
+**Learning Angular (I'm a backend developer and new manager)**
+- I have a 4-week starter plan:
+  1. Shape: an `ng new` demo and the angular.dev Essentials.
+  2. A codebase walkthrough of one feature end to end with a senior front-end engineer.
+  3. Make one tiny change through a PR myself.
+  4. Quality and risk: coverage, Sonar for TypeScript, bundle size, Angular version end of support.
+- Explain Angular to me with Spring analogies: component ≈ controller + view, service/DI ≈ `@Service`/`@Autowired`, interceptor ≈ servlet filter, router ≈ `@RequestMapping`, lazy loading ≈ loading a jar on first use, `ng build` ≈ `mvn package`.
+
 ## 8. Artifacts produced (on my other machine or in my downloads)
 
 | File / document | What it is | Status |
@@ -222,10 +271,12 @@ Both choices split the app into vertical slices by business domain, each owned e
 | `Libraries_vs_Micro_Frontends.pptx` | 14-slide even comparison deck (section 6), with micro frontend pattern diagrams | **Current**; for architects, product, management |
 | `Micro_Frontends_Decision_Deck.pptx` | Earlier deck that leaned toward micro frontends | Superseded |
 | `Modernization_Plan_One_Slide.pptx` | One-slide plan: today's approach plus the three tracks (section 3) | Done |
-| `RepApp_Account_Opening_One_Slide.pptx`, `One_Slide_Plan_Template_nofooter.pptx` | Account opening plan-on-a-page versions | Done |
+| Account opening plan-on-a-page `.pptx` files (two versions) | One-slide account opening plan | Done |
 | Copilot Prompt Runbook (doc) | All 11 ao/ng prompts verbatim, run order, checkpoints | Done |
 | HLA doc for micro frontends (doc) | Shell, auth, legacy routing | Diagrams still to add |
 | `mfe-hla.prompt.md` | Prompt that generates the HLA from my architecture `.md` | Ready to use |
+| `Micro_Frontends_Guide_for_Backend_Engineers.pdf` | 27-page guide: Angular basics for backend engineers, libraries vs MFE, 4 patterns with diagrams, authentication, S3 hosting, library-to-MFE conversion steps, applying it to the app, leading the conversation, 4-week Angular starter plan, glossary | Current reference |
+| "Micro Frontend Patterns: A Guide for Backend Engineers" (doc) | Online version of the patterns guide | Done |
 
 ## 9. Where I left off and next steps
 
