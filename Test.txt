@@ -1,0 +1,32 @@
+I have a Chrome net-export log at ./netlog.json captured while reproducing a bug:
+on dafdirectqa.fmr.com, clicking NEXT on the DAF Direct widget opens a new tab to
+cgfqa1.fmr.com/cgfweb/app/CGFLogon?... (GET with grant params), the page shows
+"Please Wait" and auto-submits, then lands on cgfqa1.fmr.com/cgfweb/app/CGFLogon
+showing "An unexpected error occurred. (00000000)". Nothing appears in Datadog.
+
+The file is too large to read directly. Do this:
+
+1. Write and run a Python script (standard library only) that:
+   - Loads the JSON and maps event type IDs to names using constants.logEventTypes
+     (and source types via constants.logSourceType, phases via constants.logEventPhase).
+   - Groups events by source.id.
+   - For every URL_REQUEST whose URL host is cgfqa1.fmr.com or dafdirectqa.fmr.com,
+     outputs in chronological order:
+       - timestamp, source id, method and URL (from URL_REQUEST_START_JOB)
+       - request headers sent (HTTP_TRANSACTION_SEND_REQUEST_HEADERS or the
+         HTTP2/QUIC equivalents)
+       - response status line and headers (HTTP_TRANSACTION_READ_RESPONSE_HEADERS)
+       - redirect location (URL_REQUEST_REDIRECT_JOB / URL_REQUEST_REDIRECTED)
+       - any net_error, with its name from constants.netError
+   - Masks cookie and authorization values, showing only cookie names.
+   - Writes the result to summary.txt.
+
+2. Read summary.txt and answer:
+   - The full request chain from the NEXT click to the error page, as a numbered list.
+   - Which request returned the error page, its method and HTTP status.
+   - Whether there was any redirect to a login/SSO host, or none.
+   - Which cookies (names only) were sent on the GET and POST to CGFLogon,
+     especially JSESSIONID or SSO cookies, and any Set-Cookie in responses.
+   - Any server-identifying headers (Server, Via, X-Request-Id, etc.) that show
+     which layer produced the error response.
+   - Your best hypothesis for the root cause, and why Datadog would not show it.
