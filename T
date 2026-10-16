@@ -1,0 +1,54 @@
+Here's a draft you can paste into the form. I've written it in first person and kept the language plain. Anything in [brackets] needs a quick fill-in or check from you before you submit.
+
+---
+
+**Summary**
+
+This year I moved from a technical lead role in Brokerage Recordkeeping Technology into a Director role at Fidelity Charitable, taking over RepApp modernization and a team that was new to the application and domain. My focus was getting a stalled program back to predictable delivery, setting a clear technical direction for RepApp, and giving leadership better visibility into our application portfolio.
+
+**Key accomplishments**
+
+*Reset RepApp delivery*
+- Took over RepApp modernization on Aug 10. The program had been running since January with no written scope and only a few pieces migrated.
+- Re-planned the work: rebalanced front-end developers onto backend APIs, got Product answering open questions, brought in an SDET to own the quality checklist and test plan, and set dated milestones.
+- Cut the Sept 30 scope to something achievable: all supporting backend APIs plus the Check contribution front end, with other contribution types to follow. [Outcome: e.g., delivered to production on Sept 30 / status]
+
+*Set the technical direction for RepApp*
+- Assessed the split experience (about 45% Angular, 55% legacy) and recommended finishing the migration so reps get one consistent app, prioritizing screens using Datadog usage data.
+- Mapped the account-opening rep journey end to end and planned to reuse an existing Angular account-opening component library rather than rebuild it.
+- Started a module federation POC to evaluate micro frontends vs. domain libraries, so the teams sharing RepApp can deploy independently. Preparing an options comparison for architects, Product and management.
+- Ran a UAT stress test on RepApp and documented errors, Datadog APM and Kubernetes findings in Confluence.
+- Proposed a plan to work down 42k+ Sonar issues using a classification framework.
+
+*Portfolio visibility for leadership*
+- Started a shared application inventory with three peer managers covering 100+ apps, pulling ServiceNow and Jira data into one place (TLM status, migration dates, app type, vulnerabilities).
+- Built a Power BI dashboard and a tech health assessment for leadership on top of it, and started an application playbook on SharePoint/Power Apps.
+
+*AI-assisted engineering*
+- Built a GitHub Copilot prompt kit for spec extraction and feature specs to speed up the migration.
+- Proposed an AI assistant inside RepApp that would let reps complete donor flows through chat, built on our existing documented APIs.
+
+*Earlier in the year (BRT)* [keep or cut depending on your review period]
+- Led mainframe-to-cloud modernization work on Books & Records and Margin platforms: Kafka batch consumers, Spring Batch across CockroachDB, Oracle and DB2, and Datadog observability across 200+ pods.
+- Made COBOL/JCL knowledge searchable for distributed developers using Copilot.
+- Automated API regression testing across large Postman collections (Newman + Puppeteer).
+
+**Leadership and people**
+- Took on a short-staffed team new to the domain. Started building a knowledge base and checklists, and focused on growing people into new areas (front-end devs on backend work).
+- [Add: hiring, team retro, any recognition or feedback you received]
+
+**Areas for growth**
+- Managing up: communicating risk and trade-offs to leadership earlier and more concisely.
+- Continuing to build soft skills as a new people manager.
+- Deepening Angular and front-end architecture knowledge, given my backend background.
+
+**Goals for next year**
+- Finish RepApp migration to a single Angular experience, prioritized by usage.
+- Decide and implement the decoupling approach (micro frontends or domain libraries) so teams deploy independently.
+- Reduce Sonar and security findings measurably.
+- Get the app portfolio dashboard adopted across the manager group.
+- Grow the team's domain knowledge and reduce single-person dependencies.
+
+---
+
+The biggest gap is the Sept 30 outcome. If it shipped, lead with that line, since it's your strongest result. If you can add one or two numbers (APIs delivered, Sonar issues closed, apps tracked in the dashboard), the review will read much stronger.
